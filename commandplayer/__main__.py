@@ -9,6 +9,7 @@ import signal
 import os
 import pty
 import select
+import time
 
 
 class CommandPlayer:
@@ -24,6 +25,7 @@ class CommandPlayer:
         self.processes = {}
         self.threads = {}
         self.queues = {}
+        self.output_buffer = []  # 出力をバッファリングするリスト
 
     def create_widgets(self):
         self.button_frame = ttk.Frame(self.master)
@@ -34,9 +36,14 @@ class CommandPlayer:
         self.response_area = tk.Text(self.master, height=10, width=50)
         self.response_area.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
 
+        self.scrollbar = ttk.Scrollbar(
+            self.master, orient="vertical", command=self.response_area.yview)
+        self.response_area['yscrollcommand'] = self.scrollbar.set
+        self.scrollbar.grid(row=0, column=2, sticky='ns')
+
         self.control_frame = ttk.Frame(self.master)
         self.control_frame.grid(
-            row=1, column=0, columnspan=2, sticky="ew", padx=5, pady=5)
+            row=1, column=0, columnspan=3, sticky="ew", padx=5, pady=5)
 
         self.clear_btn = ttk.Button(
             self.control_frame, text="Clear Output", command=self.clear_output)
@@ -81,16 +88,16 @@ class CommandPlayer:
     def execute_command(self, index):
         if index in self.processes:
             if self.processes[index].poll() is None:
-                self.response_area.insert(
-                    tk.END, "\nTerminating the existing process...\n")
+                self.output_buffer.append(
+                    "\nTerminating the existing process...\n")
                 self.kill_command(index)
             else:
                 del self.processes[index]
                 del self.queues[index]
                 del self.threads[index]
 
-        self.response_area.insert(
-            tk.END, f"\nExecuting command: {self.commands[index]['command']}\n")
+        self.output_buffer.append(
+            f"\nExecuting command: {self.commands[index]['command']}\n")
 
         master_fd, slave_fd = pty.openpty()
 
@@ -116,7 +123,7 @@ class CommandPlayer:
             try:
                 rlist, _, _ = select.select([fd], [], [], 0.1)
                 if rlist:
-                    output = os.read(fd, 1024).decode()
+                    output = os.read(fd, 1024).decode(errors='replace')
                     if output:
                         q.put(output)
                     else:
@@ -126,19 +133,30 @@ class CommandPlayer:
             except (OSError, ValueError):
                 break
         os.close(fd)
+        q.put(None)  # シグナルとして None を送信
 
     def update_output(self, index):
+        if index not in self.queues:
+            return
+
         try:
             while True:
-                output = self.queues[index].get_nowait()
-                self.response_area.insert(tk.END, output)
-                self.response_area.see(tk.END)
+                data = self.queues[index].get_nowait()
+                if data is None:  # プロセスが終了したことを示す
+                    self.output_buffer.append("\nProcess finished\n")
+                    break
+                self.output_buffer.append(data)
         except queue.Empty:
-            if index in self.processes:
-                self.master.after(100, lambda: self.update_output(index))
-            else:
-                self.response_area.insert(tk.END, "\nProcess finished\n")
-                self.response_area.see(tk.END)
+            pass
+
+        # 一定間隔（500ミリ秒）でテキストエリアを更新
+        if self.output_buffer:
+            self.response_area.insert(tk.END, ''.join(self.output_buffer))
+            self.response_area.see(tk.END)
+            self.output_buffer.clear()
+
+        # 次の更新をスケジュール
+        self.master.after(500, lambda: self.update_output(index))
 
     def kill_command(self, index):
         if index in self.processes:
@@ -148,8 +166,7 @@ class CommandPlayer:
             except ProcessLookupError:
                 pass
             del self.processes[index]
-            self.response_area.insert(tk.END, "\nProcess terminated\n")
-            self.response_area.see(tk.END)
+            self.output_buffer.append("\nProcess terminated\n")
 
     def edit_command(self, index):
         edit_window = tk.Toplevel(self.master)
