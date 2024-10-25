@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 import tkinter as tk
-from tkinter import ttk, simpledialog
+from tkinter import ttk, simpledialog, messagebox
 import subprocess
 import json
+import threading
+import queue
+import signal
+import os
+import pty
+import select
 
 
 class CommandPlayer:
@@ -14,6 +20,10 @@ class CommandPlayer:
 
         self.create_widgets()
         self.configure_layout()
+
+        self.processes = {}
+        self.threads = {}
+        self.queues = {}
 
     def create_widgets(self):
         self.button_frame = ttk.Frame(self.master)
@@ -41,7 +51,7 @@ class CommandPlayer:
         self.remove_btn.pack(side=tk.LEFT, padx=5)
 
         self.exit_btn = ttk.Button(
-            self.control_frame, text="Exit", command=self.master.quit)
+            self.control_frame, text="Exit", command=self.on_exit)
         self.exit_btn.pack(side=tk.RIGHT, padx=5)
 
     def configure_layout(self):
@@ -53,24 +63,93 @@ class CommandPlayer:
             widget.destroy()
 
         for i, command in enumerate(self.commands):
-            btn = ttk.Button(
-                self.button_frame, text=command['name'], command=lambda x=i: self.execute_command(x))
-            btn.grid(row=i, column=0, padx=5, pady=5, sticky="ew")
+            btn_frame = ttk.Frame(self.button_frame)
+            btn_frame.grid(row=i, column=0, padx=5, pady=5, sticky="ew")
 
-            edit_btn = ttk.Button(
-                self.button_frame, text="Edit", command=lambda x=i: self.edit_command(x))
-            edit_btn.grid(row=i, column=1, padx=5, pady=5)
+            btn = ttk.Button(
+                btn_frame, text=command['name'], command=lambda x=i: self.execute_command(x))
+            btn.pack(side=tk.LEFT, padx=(0, 5))
+
+            kill_btn = ttk.Button(btn_frame, text="Kill",
+                                  command=lambda x=i: self.kill_command(x))
+            kill_btn.pack(side=tk.LEFT)
+
+            edit_btn = ttk.Button(btn_frame, text="Edit",
+                                  command=lambda x=i: self.edit_command(x))
+            edit_btn.pack(side=tk.LEFT, padx=(5, 0))
 
     def execute_command(self, index):
-        command = self.commands[index]['command']
+        if index in self.processes:
+            if self.processes[index].poll() is None:
+                self.response_area.insert(
+                    tk.END, "\nTerminating the existing process...\n")
+                self.kill_command(index)
+            else:
+                del self.processes[index]
+                del self.queues[index]
+                del self.threads[index]
+
+        self.response_area.insert(
+            tk.END, f"\nExecuting command: {self.commands[index]['command']}\n")
+
+        master_fd, slave_fd = pty.openpty()
+
+        process = subprocess.Popen(self.commands[index]['command'], shell=True,
+                                   stdout=slave_fd, stderr=slave_fd, stdin=slave_fd, preexec_fn=os.setsid)
+        self.processes[index] = process
+
+        os.close(slave_fd)
+
+        q = queue.Queue()
+        self.queues[index] = q
+
+        thread = threading.Thread(
+            target=self.read_output, args=(master_fd, q, index))
+        thread.daemon = True
+        thread.start()
+        self.threads[index] = thread
+
+        self.update_output(index)
+
+    def read_output(self, fd, q, index):
+        while True:
+            try:
+                rlist, _, _ = select.select([fd], [], [], 0.1)
+                if rlist:
+                    output = os.read(fd, 1024).decode()
+                    if output:
+                        q.put(output)
+                    else:
+                        break
+                if index not in self.processes:
+                    break
+            except (OSError, ValueError):
+                break
+        os.close(fd)
+
+    def update_output(self, index):
         try:
-            result = subprocess.check_output(
-                command, shell=True, text=True, stderr=subprocess.STDOUT)
-            self.response_area.delete(1.0, tk.END)
-            self.response_area.insert(tk.END, result)
-        except subprocess.CalledProcessError as e:
-            self.response_area.delete(1.0, tk.END)
-            self.response_area.insert(tk.END, f"Error: {e.output}")
+            while True:
+                output = self.queues[index].get_nowait()
+                self.response_area.insert(tk.END, output)
+                self.response_area.see(tk.END)
+        except queue.Empty:
+            if index in self.processes:
+                self.master.after(100, lambda: self.update_output(index))
+            else:
+                self.response_area.insert(tk.END, "\nProcess finished\n")
+                self.response_area.see(tk.END)
+
+    def kill_command(self, index):
+        if index in self.processes:
+            try:
+                os.killpg(os.getpgid(
+                    self.processes[index].pid), signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            del self.processes[index]
+            self.response_area.insert(tk.END, "\nProcess terminated\n")
+            self.response_area.see(tk.END)
 
     def edit_command(self, index):
         edit_window = tk.Toplevel(self.master)
@@ -126,8 +205,12 @@ class CommandPlayer:
             self.save_commands_to_file()
             self.create_command_buttons()
         else:
-            tk.messagebox.showwarning(
-                "Warning", "Cannot remove the last button.")
+            messagebox.showwarning("Warning", "Cannot remove the last button.")
+
+    def on_exit(self):
+        for index in list(self.processes.keys()):
+            self.kill_command(index)
+        self.master.destroy()
 
 
 if __name__ == "__main__":
