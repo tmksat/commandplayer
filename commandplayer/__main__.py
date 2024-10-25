@@ -149,14 +149,14 @@ class CommandPlayer:
         except queue.Empty:
             pass
 
-        # 一定間隔（500ミリ秒）でテキストエリアを更新
+        # 一定間隔（100ミリ秒）でテキストエリアを更新
         if self.output_buffer:
             self.response_area.insert(tk.END, ''.join(self.output_buffer))
             self.response_area.see(tk.END)
             self.output_buffer.clear()
 
         # 次の更新をスケジュール
-        self.master.after(500, lambda: self.update_output(index))
+        self.master.after(100, lambda: self.update_output(index))
 
     def kill_command(self, index):
         if index in self.processes:
