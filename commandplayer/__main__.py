@@ -61,6 +61,12 @@ class CommandPlayer:
             self.control_frame, text="Exit", command=self.on_exit)
         self.exit_btn.pack(side=tk.RIGHT, padx=5)
 
+        # 右クリックメニュー
+        self.menu = tk.Menu(self.master, tearoff=0)
+        self.menu.add_command(label="Copy", command=self.copy_selected_text)
+        # 右クリックメニューのバインディングを変更
+        self.response_area.bind("<Button-2>", self.focus_and_show_context_menu)
+
     def configure_layout(self):
         self.master.grid_columnconfigure(1, weight=1)
         self.master.grid_rowconfigure(0, weight=1)
@@ -154,9 +160,8 @@ class CommandPlayer:
             self.response_area.insert(tk.END, ''.join(self.output_buffer))
             self.response_area.see(tk.END)
             self.output_buffer.clear()
-
-        # 次の更新をスケジュール
-        self.master.after(100, lambda: self.update_output(index))
+        self.master.after(
+            100, lambda: self.update_output(index))   # 次の更新をスケジュール
 
     def kill_command(self, index):
         if index in self.processes:
@@ -228,6 +233,25 @@ class CommandPlayer:
         for index in list(self.processes.keys()):
             self.kill_command(index)
         self.master.destroy()
+
+    def focus_and_show_context_menu(self, event):
+        self.response_area.focus_set()
+        self.show_context_menu(event)
+
+    def show_context_menu(self, event):
+        try:
+            self.menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            self.menu.grab_release()
+
+    def copy_selected_text(self):
+        try:
+            selected_text = self.response_area.get(tk.SEL_FIRST, tk.SEL_LAST)
+            self.master.clipboard_clear()
+            self.master.clipboard_append(selected_text)
+        except tk.TclError:
+            # 選択されたテキストがない場合
+            pass
 
 
 if __name__ == "__main__":
