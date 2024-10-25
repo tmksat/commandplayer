@@ -19,6 +19,12 @@ Pythonで開発されており、Tkinterを使用してユーザーフレンド�
 
 
 
+## スクリーンショット
+
+![Screenshot](./screenshot.png)
+
+
+
 ## 必要条件
 
 - Python 3.6以上

@@ -15,7 +15,7 @@ import time
 class CommandPlayer:
     def __init__(self, master):
         self.master = master
-        self.master.title("Command Player")
+        self.master.title("commandplayer")
 
         self.load_commands_from_file()
 

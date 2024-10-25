@@ -164,3 +164,4 @@ cython_debug/
 #.idea/
 
 commands.json
+.DS_Store
