@@ -1,38 +1,38 @@
 # commandplayer
 
-commandplayerは、カスタマイズ可能なGUIベースのコマンド実行ツールです。
-Pythonで開発されており、Tkinterを使用してユーザーフレンドリーなインターフェースを提供します。
-このツールは、頻繁に使用するコマンドやスクリプトを効率的に管理し、実行するのに役立ちます。
+commandplayer is a customizable GUI-based command execution tool.
+Developed in Python, it provides a user-friendly interface using Tkinter.
+This tool helps you efficiently manage and execute frequently used commands and scripts.
 
 
 
-## 主な機能
+## Key Features
 
-- カスタマイズ可能なコマンドボタン
-- インタラクティブおよび非インタラクティブなコマンドの実行
-- リアルタイムのコマンド出力表示
-- 動的なボタンの追加・削除
-- コマンドの編集機能
-- 実行中のコマンドの終了（Kill）機能
-- 設定のJSON形式での保存と読み込み
-- 出力のクリア機能
-
-
-
-## スクリーンショット
-
-![Screenshot](./screenshot.png)
+- Customizable command buttons
+- Execution of both interactive and non-interactive commands
+- Real-time command output display
+- Dynamic button addition and removal
+- Command editing functionality
+- Kill functionality for running commands
+- Save and load settings in JSON format
+- Output clearing functionality
 
 
 
-## 必要条件
+## Screenshot
 
-- Python 3.6以上
-- Tkinter（通常はPythonに標準で含まれています）
-
+![Screenshot](./docs/screenshot.png)
 
 
-## インストール
+
+## Requirements
+
+- Python 3.6 or higher
+- Tkinter (usually included with Python by default)
+
+
+
+## Installation
 
 ```shell
 $ cd commandplayer
@@ -44,57 +44,57 @@ $ python3 -m commandplayer
 
 
 
-## 使用方法
+## Usage
 
-1. スクリプトを実行します：
+1. Run the script:
 
 ```shell
 $ python3 -m commandplayer
 ```
 
-2. GUIウィンドウが開きます。デフォルトで5つのコマンドボタンが表示されます。
+2. A GUI window will open. By default, 5 command buttons are displayed.
 
-3. 各ボタンの隣にある「Edit」ボタンをクリックして、ボタン名とコマンドを編集できます。
+3. Click the "Edit" button next to each button to edit the button name and command.
 
-4. コマンドボタンをクリックすると、対応するコマンドが実行され、結果が右側のテキストエリアにリアルタイムで表示されます。
+4. Click a command button to execute the corresponding command, and the results will be displayed in real-time in the text area on the right.
 
-5. 実行中のコマンドを終了するには、対応する「Kill」ボタンをクリックします。
+5. To terminate a running command, click the corresponding "Kill" button.
 
-6. 「Add Button」をクリックして新しいコマンドボタンを追加できます。
+6. Click "Add Button" to add a new command button.
 
-7. 「Remove Button」をクリックして最後のコマンドボタンを削除できます。
+7. Click "Remove Button" to remove the last command button.
 
-8. 「Clear Output」ボタンをクリックして、出力テキストエリアをクリアできます。
+8. Click the "Clear Output" button to clear the output text area.
 
-9. 「Exit」ボタンをクリックしてアプリケーションを終了します。
-
-
-
-## 特徴
-
-- インタラクティブなコマンド（pingなど）と非インタラクティブなコマンド（lsなど）の両方を適切に処理します。
-- 同じコマンドを連続して実行できます。
-- コマンドの実行状態を適切に追跡し、必要に応じて終了処理を行います。
-- 実行中のコマンドをリアルタイムで表示します。
-- アプリケーションの終了処理が正しく機能し、実行中のプロセスを適切に終了させます。
+9. Click the "Exit" button to terminate the application.
 
 
 
-## カスタマイズ
+## Features
 
-コマンドの設定は`commands.json`ファイルに保存されます。このファイルを直接編集することで、アプリケーション外からもコマンドを管理できます。
-
-
-
-
-## ライセンス
-
-このプロジェクトは[MITライセンス](https://choosealicense.com/licenses/mit/)の下で公開されています。
+- Properly handles both interactive commands (such as ping) and non-interactive commands (such as ls).
+- Can execute the same command consecutively.
+- Properly tracks command execution state and performs termination processing as needed.
+- Displays running commands in real-time.
+- Application termination processing works correctly and properly terminates running processes.
 
 
 
-## 連絡先
+## Customization
+
+Command settings are saved in the `commands.json` file. You can manage commands from outside the application by directly editing this file.
+
+
+
+
+## License
+
+This project is released under the [MIT License](https://choosealicense.com/licenses/mit/).
+
+
+
+## Contact
 
 Tomoki Sato - [@tmksat](https://twitter.com/tmksat)
 
-プロジェクトリンク: [https://github.com/tmksat/commandplayer](https://github.com/tmksat/commandplayer)
+Project Link: [https://github.com/tmksat/commandplayer](https://github.com/tmksat/commandplayer)
