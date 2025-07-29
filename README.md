@@ -95,6 +95,6 @@ This project is released under the [MIT License](https://choosealicense.com/lice
 
 ## Contact
 
-Tomoki Sato - [@tmksat](https://twitter.com/tmksat)
+Tomoki Sato - [@tmksat](https://x.com/tmksat)
 
 Project Link: [https://github.com/tmksat/commandplayer](https://github.com/tmksat/commandplayer)
